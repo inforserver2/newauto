@@ -1,0 +1,83 @@
+#!/bin/bash
+
+if [ "$(id -u)" != "0" ]; then
+  echo "This script must be run as root" 1>&2
+  exit 1
+fi
+
+apt-get -y install debconf-utils
+
+pc=/etc/postfix/main.cf
+pm=/etc/postfix/master.cf
+master=/etc/dovecot/conf.d/10-master.conf
+auth=/etc/dovecot/conf.d/10-auth.conf
+mail=/etc/dovecot/conf.d/10-mail.conf
+pop=/etc/dovecot/conf.d/20-pop3.conf 
+ssl=/etc/dovecot/conf.d/10-ssl.conf
+
+old_hostname=`hostname`
+new_hostname="mail.krisna.com"
+domain_name="krisna.com"
+ip_local="10.0.2.15"
+postfix_mynetworks_append="10.0.2.0/24"
+
+
+export DEBIAN_FRONTEND=noninteractive
+
+sed -i "s/$old_hostname/$new_hostname/g" /etc/hosts
+sed -i "s/127.0.1.1/$ip_local/g" /etc/hosts
+sed -i "s/$old_hostname/$new_hostname/g" /etc/hostname
+
+echo "postfix postfix/mailname string $domain_name" | debconf-set-selections; 
+echo "postfix postfix/main_mailer_type string 'Internet Site'" | debconf-set-selections; 
+echo "postfix postfix/mynetworks  string  127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 $postfix_mynetworks_append" | debconf-set-selections; 
+
+apt-get -y install postfix
+
+if ! grep "home_mailbox = Maildir/" $pc -q ; then
+cat >> $pc <<-EOF
+home_mailbox = Maildir/
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_local_domain =
+smtpd_sasl_security_options = noanonymous
+broken_sasl_auth_clients = yes
+smtpd_sasl_auth_enable = yes
+smtpd_recipient_restrictions = permit_sasl_authenticated,permit_mynetworks,reject_unauth_destination
+smtp_tls_security_level = may
+smtpd_tls_security_level = may
+smtp_tls_note_starttls_offer = yes
+smtpd_tls_loglevel = 1
+smtpd_tls_received_header = yes
+EOF
+fi
+
+sed -i'' '17,20 s/^#//' $pm
+sed -i'' '26,31 s/^#//' $pm
+sed -i'' '37,38 s/^#//' $pm
+
+DEBIAN_FRONTEND=noninteractive apt-get -y install dovecot-core
+
+sed -i '96,98s[#[[' $master
+if ! grep "user = postfix" $master -q ; then
+  sed -i '97i\group = postfix' $master
+  sed -i '97i\user = postfix' $master
+fi
+
+sed -i 's[^auth_mechanisms = plain$[auth_mechanisms = plain login[' $auth #100
+
+service postfix restart
+service dovecot restart
+
+apt-get install dovecot-imapd dovecot-pop3d
+apt-get install dovecot-imapd dovecot-pop3d
+
+sed -i 's[^mail_location = mbox.*[mail_location = maildir:~/Maildir[' $mail #30
+sed -i '50s[#[[' $pop 
+sed -i '6s[#[[' $ssl 
+
+sudo apt-get -y install mailutils pflogsumm
+
+service dovecot restart
+netstat -nl4
+

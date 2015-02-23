@@ -1,0 +1,29 @@
+#!/bin/bash
+
+sudo apt-get install -y sysv-rc-conf 
+
+sysv-rc-conf apache2 on
+
+sysv-rc-conf bind9 on
+
+sysv-rc-conf postgresql on
+
+sysv-rc-conf mysql off
+
+sysv-rc-conf redis-server off
+
+sysv-rc-conf memcached on
+
+sysv-rc-conf webmin on
+
+sysv-rc-conf newrelic-sysmond on
+
+sysv-rc-conf sphinxsearch off
+
+sysv-rc-conf tomcat6 off
+
+sysv-rc-conf postfix on
+
+sysv-rc-conf dovecot on
+
+

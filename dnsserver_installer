@@ -1,0 +1,109 @@
+#!/bin/bash
+# Install DNS Server 
+# http://www.krizna.com/ubuntu/configure-dns-server-ubuntu-14-04/
+
+if [ "$(id -u)" != "0" ]; then
+echo "This script must be run as root" 1>&2
+exit 1
+fi
+
+sudo apt-get update
+sudo apt-get install bind9
+
+
+domain="krisna.com."
+local_ip="10.0.2.15"
+last_number_local_ip="15"
+reverse_local_ip="2.0.10.in-addr.arpa"
+ns="ns.$domain"
+root_ns="root.$ns"
+
+if ! grep "forwarders { 8.8.8.8; 8.8.4.4; };" /etc/bind/named.conf.options -q ; then
+  sed -i '16i\forwarders { 8.8.8.8; 8.8.4.4; };' /etc/bind/named.conf.options
+fi
+
+sudo service bind9 restart
+
+sed -i "s/127.0.1.1/127.0.0.1/g" /etc/resolv.conf
+
+###
+
+if [ -e /etc/bind/db.main ] ; then
+
+  echo "db.main existe"
+
+else
+
+cat >> /etc/bind/db.main <<-EOF
+
+; BIND data file for local loopback interface
+;
+\$TTL    604800
+@ IN SOA $ns $root_ns (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      $ns
+@       IN      A       $local_ip
+@       IN      AAAA    ::1
+ns      IN      A       $local_ip
+www     IN  A   $local_ip
+mail     IN   A   $local_ip
+
+EOF
+
+fi
+
+###
+
+if [ -e /etc/bind/db.rev ] ; then
+
+  echo "db.rev existe"
+
+else
+
+cat >> /etc/bind/db.rev <<-EOF
+
+; BIND reverse data file for local loopback interface
+;
+\$TTL    604800
+@ IN SOA $ns $root (
+                              1         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@      IN      NS      ns.
+$last_number_local_ip      IN      PTR     $domain
+
+EOF
+
+fi
+
+###
+
+if ! grep "zone \"$domain\"" /etc/bind/named.conf.local  -q ; then
+cat >> /etc/bind/named.conf.local  <<-EOF
+
+// Forward zone
+zone "$domain" {
+        type master;
+        file "/etc/bind/db.main";
+};
+//reverse zone
+zone "$reverse_local_ip" {
+        type master;
+        file "/etc/bind/db.rev";
+};
+
+EOF
+fi
+
+
+sudo service bind9 restart
+
+
