@@ -1,0 +1,68 @@
+#!/bin/bash
+
+ssh-keygen -t rsa -q -N '' -f ~/.ssh/id_rsa
+
+string="GIT_PS1_SHOWDIRTYSTATE=true"
+file=~/.bashrc
+echo Setting up git-completion and git-prompt
+if grep "$string" $file -q 
+then
+echo already!
+else
+	echo doing...
+	cd
+	wget https://raw.github.com/git/git/master/contrib/completion/git-completion.bash
+	mv ~/git-completion.bash ~/.git-completion.bash
+	echo source ~/.git-completion.bash >> ~/.bashrc
+	wget https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh
+	mv  ~/git-prompt.sh  ~/.git-prompt.sh
+	echo source ~/.git-prompt.sh >> ~/.bashrc 
+	echo "GIT_PS1_SHOWDIRTYSTATE=true" >> ~/.bashrc 
+	cat >> ~/.bashrc <<-EOF
+	PS1='\u@\h:\w \$(__git_ps1 "(%s)")\$ '
+	EOF
+
+	echo done.
+fi
+
+source /etc/profile.d/rvm.sh
+rvm group add rvm $USER
+echo "source /etc/profile.d/rvm.sh" | sudo tee -a ~/.bashrc
+echo "export RAILS_ENV='development'" | sudo tee -a ~/.bashrc
+
+sh -c "`curl -fsSL https://raw.githubusercontent.com/skwp/dotfiles/master/install.sh`"
+
+if grep "Mine sets" ~/.vimrc -q
+then
+    echo already!
+else
+cat >> ~/.vimrc <<-EOF
+
+    "Mine sets
+
+    set termencoding=iso-8859-1
+    set encoding=UTF-8
+    set fileencodings=UTF-8
+
+    nnoremap <F12> :call ToggleMouse()<CR>
+    function! ToggleMouse()
+      if &mouse == 'a'
+          set mouse=
+          echo "Mouse usage disabled"
+      else
+          set mouse=a
+          echo "Mouse usage enabled"
+      endif
+    endfunction
+
+    set pastetoggle=<F2>
+
+    set nobackup
+    set noswapfile
+
+    let g:user_zen_expandabbr_key = '<c-e>'
+    let g:use_zen_complete_tag = 1
+    let g:ackprg='ack-grep -H --nocolor --nogroup --column'
+
+EOF
+fi

@@ -1,0 +1,53 @@
+#!/bin/bash
+
+if [ "$(id -u)" != "0" ]; then
+   echo "This script must be run as root" 1>&2
+   exit 1
+fi
+
+
+curl -sSL https://rvm.io/mpapis.asc | sudo gpg --import -
+curl -L https://get.rvm.io | bash -s stable
+source /etc/profile.d/rvm.sh
+rvm group add rvm $USER
+# rvm fix-permissions system
+echo "source /etc/profile.d/rvm.sh" | sudo tee -a ~/.bashrc
+# echo "export rvm_max_time_flag=20" >> ~/.rvmrc
+rvm -v
+type rvm | head -n 1
+rvm requirements
+rvm install 1.9
+rvm install 2.0
+rvm install 2.2.0
+rvm --default use 2.2.0
+rvm gemset create myproject
+rvm use 2.2.0@myproject --default
+gem install bundler
+gem update bundler
+gem install rails --no-ri --no-rdoc
+gem install passenger
+
+echo Getting the version of passenger...
+version=`passenger-config --version`
+gem_home=`echo $GEM_HOME`
+echo $version
+echo $gem_home
+if grep "passenger" /etc/apache2/apache2.conf -q
+then
+echo LoadModule for passenger already in place
+else
+echo Compiling passenger
+passenger-install-apache2-module --auto
+echo Pushing LoadModule to apache2.conf...
+cat <<-EOF | sudo tee -a /etc/apache2/apache2.conf
+   LoadModule passenger_module $gem_home/gems/passenger-$version/buildout/apache2/mod_passenger.so
+   <IfModule mod_passenger.c>
+     PassengerRoot $gem_home/gems/passenger-$version
+     PassengerDefaultRuby $gem_home/wrappers/ruby
+   </IfModule>
+EOF
+echo done.
+fi
+
+
+

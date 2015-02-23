@@ -1,0 +1,7 @@
+#!/bin/bash
+
+./begin
+./add_users
+echo "then execute rvm_installer as root"
+echo "then execute a personal_user_custom to each user" # root, admin_user, deploy
+

@@ -1,0 +1,163 @@
+#!/bin/bash
+
+mysql_pwd="vtr512"
+pg_pwd="vtr512"
+
+ export DEBIAN_FRONTEND=noninteractive
+
+ sudo apt-get -y update
+ sudo apt-get -y upgrade
+
+echo "### set system to utf-8"
+if grep "export LANGUAGE=" /etc/bash.bashrc -q 
+then
+echo already set system to utf-8!
+else
+echo doing...
+sudo tee -a /etc/bash.bashrc <<EOF
+export LANGUAGE=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+EOF
+sudo locale-gen en_US.UTF-8
+sudo dpkg-reconfigure locales
+echo done.
+fi
+
+##########################################
+
+ sudo apt-get -y install ntp ntpdate
+ sudo apt-get -y install ssh openssh-server
+ sudo apt-get -y install lynx libcurl4-gnutls-dev libexpat1-dev gettext libz-dev libssl-dev build-essential
+ sudo apt-get -y install nmap tree unzip unrar-free bind9 dnsutils apache2 libcurl4-openssl-dev apache2-prefork-dev libapr1-dev libaprutil1-dev sqlite3 mysql-client
+ echo "mysql-server mysql-server/root_password password $mysql_pwd" | sudo debconf-set-selections; echo "mysql-server mysql-server/root_password_again password $mysql_pwd" | sudo debconf-set-selections; sudo apt-get -y install mysql-server
+ sudo apt-get -y install libpq-dev postgresql postgresql-contrib postgresql-server-dev-9.3
+
+
+# sudo apt-get -y install pgadmin3 #needs X-11
+ sudo apt-get -y install libtool autoconf
+ sudo apt-get -y install libxslt-dev libxml2-dev
+ sudo apt-get -y install libqt4-dev libqtwebkit-dev
+# https://www.digitalocean.com/community/articles/how-to-install-git-on-ubuntu-12-04
+ sudo apt-get -y install git git-core
+
+# http://www.compilando.org/wp/sem-categoria/resolva-o-erro-add-apt-repository-command-not-found-no-ubuntu-natty-11-04
+ sudo apt-get -y install python-software-properties
+# install ruby
+ sudo add-apt-repository -y ppa:brightbox/ruby-ng-experimental
+ sudo apt-get -y update
+ sudo apt-get install -y ruby1.9.1 ruby1.9.1-dev
+# install python 3.3
+ sudo add-apt-repository -y ppa:fkrull/deadsnakes
+ sudo apt-get -y update
+ sudo apt-get -y install python3.3 python3.3-dev
+
+
+# PHP
+# http://www.inoweb.com.br/site/blog/7-instalando-apache-php-mysql-phpmyadmin-ubuntu-12
+
+ sudo apt-get -y install php5 libapache2-mod-php5
+ sudo apt-get -y install php5-mysql php5-curl php5-gd php5-idn php-pear php5-imagick php5-imap php5-mcrypt php5-memcache php5-mhash php5-ming php5-ps php5-pspell php5-recode php5-snmp php5-sqlite php5-tidy php5-xmlrpc php5-xsl php5-json php5-pgsql
+
+
+# JAVA
+# http://www.ubuntudicas.com.br/blog/2012/04/instale-o-oracle-java-jdk-7-no-ubuntu-12-04-e-11-10/
+ sudo add-apt-repository -y ppa:webupd8team/java
+ sudo apt-get -y update
+#-
+ sudo echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+ sudo apt-get -y install oracle-java7-installer
+ sudo apt-get -y install aspell libevent-dev libgmp10 libgmp-dev curl libfile-next-perl
+# http://hantys.blogspot.com.br/2012/04/instalando-imagemagick-ubuntu-1204.html
+ sudo apt-get -y install libperl-dev
+ sudo apt-get -y install libmagickwand-dev libmagickcore-dev libmagick++-dev libmagickcore4-extra libgraphviz-dev libgvc5
+# via repository
+ sudo apt-get -y install imagemagick
+ sudo apt-get -y install memcached
+ sudo apt-get -y install perl libnet-ssleay-perl libauthen-pam-perl libpam-runtime openssl libio-pty-perl apt-show-versions python
+# install redis
+ sudo add-apt-repository -y ppa:rwky/redis
+ sudo apt-get -y update
+ sudo apt-get -y install redis-server
+ sudo apt-get -y install ack-grep
+
+###############################
+
+echo "phpmyadmin phpmyadmin/app-password-confirm password $mysql_pwd" | sudo debconf-set-selections; echo "phpmyadmin phpmyadmin/dbconfig-install boolean true" | sudo debconf-set-selections; echo "phpmyadmin phpmyadmin/mysql/admin-pass password $mysql_pwd" | sudo debconf-set-selections; echo "phpmyadmin phpmyadmin/mysql/app-pass password $mysql_pwd" | sudo debconf-set-selections; echo "phpmyadmin phpmyadmin/reconfigure-webserver multiselect apache2" | sudo debconf-set-selections; sudo apt-get install phpmyadmin -y
+
+sudo apt-get -y install phppgadmin
+
+sudo sed -i 's/^local all all peer$/local all all trust/' /etc/postgresql/9.3/main/pg_hba.conf
+sudo sed -i '$ a\local all deploy md5' /etc/postgresql/9.3/main/pg_hba.conf
+sudo sed -i "s#_security[\']] = true#_security\'] = false#g" /etc/phppgadmin/config.inc.php
+sudo sed -i 's/^# allow from all/ allow from all/' /etc/apache2/conf.d/phppgadmin
+sudo ln -s /etc/apache2/conf.d/phppgadmin /etc/apache2/conf-available/phppgadmin.conf
+sudo a2enconf phppgadmin
+sudo -u postgres psql -d postgres -U postgres -c "ALTER USER postgres WITH PASSWORD '$pg_pwd'"
+cd /etc/apache2/mods-enabled
+sudo ln -s ../mods-available/rewrite.load rewrite.load
+sudo service postgresql restart
+sudo service apache2 restart
+
+################################
+
+echo "### install webmin"
+if grep "webmin.com=" /etc/apt/sources.list -q 
+then
+echo webmin ppa already installed!
+else
+echo doing...
+sudo su -c "echo 'deb http://download.webmin.com/download/repository sarge contrib' >> /etc/apt/sources.list"
+echo done.
+fi
+wget -q http://www.webmin.com/jcameron-key.asc -O- | sudo apt-key add -
+sudo apt-get update
+sudo apt-get install webmin
+
+wget -qO- https://toolbelt.heroku.com/install-ubuntu.sh | sudo sh
+
+
+# INSTALL SOLR-TOMCAT
+# https://github.com/sunspot/sunspot/wiki/Configure-Solr-on-Ubuntu%2C-the-quickest-way
+ sudo apt-get -y install openjdk-6-jdk
+ sudo apt-get -y install solr-tomcat
+ sudo service tomcat6 start
+
+sudo apt-get -y install ack ncurses-dev
+
+sudo apt-get -y install zsh vim vim-gnome exuberant-ctags ncurses-term ack-grep
+sudo dpkg-divert --local --divert /usr/bin/ack --rename --add /usr/bin/ack-grep
+
+# Install Sphinx
+
+sudo add-apt-repository -y ppa:builds/sphinxsearch-rel22
+sudo apt-get update
+sudo apt-get -y install sphinxsearch
+
+curl -sL https://deb.nodesource.com/setup | sudo bash -
+sudo apt-get -y update
+sudo apt-get -y install nodejs
+
+sudo npm install coffee-script
+
+sudo npm install -g bower
+
+sudo pear channel-discover pear.horde.org
+sudo pear channel-update pear.horde.org
+sudo pear install Horde/Horde_Yaml-beta
+
+
+
+##############
+
+if [ ! -e /etc/apt/sources.list.d/newrelic.list ]; then
+
+sudo sh -c 'echo deb http://apt.newrelic.com/debian/ newrelic non-free >> /etc/apt/sources.list.d/newrelic.list'
+wget -O- https://download.newrelic.com/548C16BF.gpg | sudo apt-key add -
+sudo apt-get update
+
+fi
+
+sudo apt-get -y install newrelic-sysmond
+sudo nrsysmond-config --set license_key=YOUR_LICENSE_KEY
+sudo service newrelic-sysmond restart
