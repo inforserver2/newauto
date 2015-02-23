@@ -6,6 +6,8 @@
 # sudo apt-get -y install wget unzip
 # sudo passwd
 
+# set the variables in all files
+
 ./begin
 ./add_users
 
