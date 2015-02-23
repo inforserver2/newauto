@@ -1,4 +1,5 @@
 #!/bin/bash
+# 1
 # FIRST PREPARE THE VM FIRST
 # sudo apt-get install -y dkms build-essential linux-headers-generic linux-headers-$(uname -r)
 # sudo mount /dev/cdrom /media/cdrom
@@ -6,14 +7,24 @@
 # sudo apt-get -y install wget unzip
 # sudo passwd
 
+# 2
 # set the variables in all files
 
+# 3 
 ./begin
 ./add_users
 
+# 4
 echo "then execute rvm_installer as root"
+
+# 5
 echo "then execute a personal_user_custom to each user" # root, admin_user, deploy
 
+# 6
 # dnsserver_installer # as root
+
+# 7
 # mailserver_installer # as root
+
+# 8
 # services_monit # as root
