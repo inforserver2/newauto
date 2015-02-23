@@ -5,6 +5,10 @@ if [ "$(id -u)" != "0" ]; then
    exit 1
 fi
 
+# in order to make foreman and backup works in production servers install these gems in the system gems
+rvm use system
+gem install backup
+gem install foreman
 
 curl -sSL https://rvm.io/mpapis.asc | sudo gpg --import -
 curl -L https://get.rvm.io | bash -s stable
