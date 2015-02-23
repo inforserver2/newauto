@@ -162,4 +162,4 @@ sudo apt-get -y install newrelic-sysmond
 sudo nrsysmond-config --set license_key=YOUR_LICENSE_KEY
 sudo service newrelic-sysmond restart
 
-sudo npm install -g bower
+sudo npm install -g bower # again in order to test output results
