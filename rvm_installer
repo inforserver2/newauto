@@ -16,7 +16,7 @@ echo "source /etc/profile.d/rvm.sh" | sudo tee -a ~/.bashrc
 rvm -v
 type rvm | head -n 1
 rvm requirements
-rvm install 1.9
+rvm install 2.1.0
 rvm install 2.0
 rvm install 2.2.0
 rvm --default use 2.2.0
