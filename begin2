@@ -163,7 +163,11 @@ sudo pear channel-discover pear.horde.org
 sudo pear channel-update pear.horde.org
 sudo pear install Horde/Horde_Yaml-beta
 
-
+cd /opt
+wget https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/deb/elasticsearch/2.2.0/elasticsearch-2.2.0.deb
+dpkg -i elasticsearch-2.2.0.deb
+update-rc.d elasticsearch defaults
+/etc/init.d/elasticsearch start
 
 ##############
 
