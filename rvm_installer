@@ -30,7 +30,7 @@ gem install rails --no-ri --no-rdoc
 gem install passenger
 
 echo Getting the version of passenger...
-version=`passenger-config --version`
+version=$(passenger-config --version | tr -dc '0-9\.')
 gem_home=`echo $GEM_HOME`
 echo $version
 echo $gem_home
@@ -48,6 +48,7 @@ cat <<-EOF | sudo tee -a /etc/apache2/apache2.conf
      PassengerDefaultRuby $gem_home/wrappers/ruby
    </IfModule>
 EOF
+sudo service apache2 restart
 echo done.
 fi
 
