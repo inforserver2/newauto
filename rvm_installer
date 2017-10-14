@@ -20,12 +20,10 @@ echo "source /etc/profile.d/rvm.sh" | sudo tee -a ~/.bashrc
 rvm -v
 type rvm | head -n 1
 rvm requirements
-rvm install 2.1.0
-rvm install 2.0
-rvm install 2.2.0
-rvm --default use 2.2.0
+rvm install 2.4.2
+rvm --default use 2.4.2
 rvm gemset create myproject
-rvm use 2.2.0@myproject --default
+rvm use 2.4.2@myproject --default
 gem install bundler
 gem update bundler
 gem install rails --no-ri --no-rdoc
